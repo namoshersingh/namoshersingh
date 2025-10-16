@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Namo Tandoori Chai</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* --- THEMES & STYLES --- */
+        :root, [data-theme="tapri"] {
+            --brand-primary: #E65100; /* Rustic Orange */
+            --brand-secondary: #FFB74D; /* Light Amber */
+            --bg-primary: #3E2723;     /* Dark Wood Brown */
+            --bg-secondary: #4E342E;   /* Lighter Wood Brown */
+            --text-primary: #FFF8E1;   /* Creamy White */
+            --text-secondary: #D7CCC8;  /* Light Stone Grey */
+            --border-color: #5D4037;   /* Medium Wood Brown */
+            --app-height: 100vh;
+        }
+        
+        [data-theme="midnight"] {
+            --brand-primary: #FF8A65; --brand-secondary: #D84315;
+            --bg-primary: #261F1D; --bg-secondary: #3D312E;
+            --text-primary: #F3EAE2; --text-secondary: #BCAAA4;
+            --border-color: #5D4037;
+        }
+
+        [data-theme="minty"] {
+            --brand-primary: #00796B; --brand-secondary: #80CBC4;
+            --bg-primary: #F0F7F7; --bg-secondary: #E0F2F1;
+            --text-primary: #004D40; --text-secondary: #00796B;
+            --border-color: #B2DFDB;
+        }
+
+        html { height: -webkit-fill-available; }
+        body { 
+            font-family: 'Montserrat', sans-serif; background-color: #000; 
+            color: var(--text-primary); -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+            min-height: var(--app-height); min-height: -webkit-fill-available;
+            overflow: hidden;
+            overflow-x: hidden;
+        }
+
+        .font-heading { font-family: 'Kalam', cursive; }
+
+        .app-container, body, .bg-primary, .bg-secondary, .modal-content { 
+            background-color: var(--bg-primary); 
+            transition: background-color 0.4s ease;
+        }
+        .app-container { 
+            height: var(--app-height); 
+            overflow-x: hidden; 
+            width: 100%;
+            background-image: url('https://www.transparenttextures.com/patterns/wood-pattern.png');
+        }
+        .text-primary, .text-secondary, .font-heading, .nav-item span, .btn-secondary { transition: color 0.4s ease; }
+        
+        main { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+        .brand-text { color: var(--brand-primary); }
+        .brand-bg { background-color: var(--brand-primary); color: #3E2723; }
+        .border-custom { border-color: var(--border-color); }
+        .bg-primary { background-color: var(--bg-primary); }
+        .bg-secondary { background-color: var(--bg-secondary); }
+        .text-primary { color: var(--text-primary); }
+        .text-secondary { color: var(--text-secondary); }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; forwards; } }
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        .slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+        
+        .btn-primary {
+            background-color: var(--brand-primary); color: var(--bg-primary);
+            font-weight: 700; border-radius: 0.5rem; padding: 0.75rem 1.25rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.4s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); border-bottom: 2px solid rgba(0,0,0,0.2);
+        }
+        .btn-primary:active { transform: translateY(1px); box-shadow: 0 2px 3px rgba(0,0,0,0.3); }
+
+        .btn-secondary {
+            background-color: var(--bg-secondary); color: var(--text-primary);
+            font-weight: 600; border-radius: 0.5rem; padding: 0.75rem 1.5rem;
+            border: 1px solid var(--border-color); transition: background-color 0.2s ease;
+        }
+
+        .modal-content { border-radius: 1.5rem 1.5rem 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.15); max-height: 85vh; overflow-y: auto; }
+        
+        .spinner {
+            border: 2px solid var(--brand-secondary); border-top: 2px solid var(--bg-primary);
+            width: 16px; height: 16px; border-radius: 50%; animation: spin 1s linear infinite;
+        }
+
+        .horizontal-scroll::-webkit-scrollbar { display: none; }
+        .horizontal-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+
+        #intro-screen-video { position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; object-fit: cover; transform: translate(-50%, -50%); z-index: -1; }
+        
+        .nav-item.active svg { color: var(--brand-primary); }
+        .nav-item.active span { color: var(--brand-primary); font-weight: 700; }
+        
+        .category-tab { padding: 0.5rem 0.25rem; }
+
+    </style>
+</head>
+<body data-theme="tapri">
+
+    <div id="splash-screen" class="fixed inset-0 bg-primary flex flex-col items-center justify-center z-[100] fade-in">
+        <img src="https://dtrxqfujlcqxuouxbbnn.supabase.co/storage/v1/object/public/assets/2025-07-12.jpg" alt="Namo Tandoori Chai Logo" class="w-32 h-32 rounded-full object-cover shadow-lg">
+        <p class="font-heading text-2xl font-bold mt-4 text-primary">Namo Tandoori Chai</p>
+        <p class="text-secondary mt-1">Loading the authentic taste...</p>
+    </div>
+
+    <div id="intro-screen" class="fixed inset-0 bg-black z-[99] hidden">
+        <video id="intro-screen-video" src="https://nfkysagcoltwlpcdpwjl.supabase.co/storage/v1/object/public/assets/Tandoori_Chai_Video_Script_Request.mp4" loop muted playsinline></video>
+        <div class="absolute inset-0 bg-black/60 flex flex-col items-center justify-end p-8 text-center text-white">
+            <div id="intro-content-start" class="w-full max-w-xs">
+                <h1 class="font-heading text-4xl font-bold">A Story in Every Sip</h1>
+                <p class="mt-2 mb-8">Experience the warmth of tradition.</p>
+                <button onclick="app.beginExperience()" class="btn-primary !bg-white !text-[#4E342E] w-full">Tap to Begin</button>
+            </div>
+            <div id="intro-content-form" class="hidden w-full max-w-xs space-y-4">
+                 <h2 class="font-heading text-2xl font-bold">Let's Get Started</h2>
+                 <input type="text" id="intro-name-input" class="w-full p-3 border border-gray-500 rounded-lg bg-black/30 text-white placeholder-gray-300 text-center" placeholder="What should we call you?" required>
+                 <input type="number" id="intro-table-input" class="w-full p-3 border border-gray-500 rounded-lg bg-black/30 text-white placeholder-gray-300 text-center" placeholder="Your Table Number" required>
+                 <button onclick="app.submitIntroDetails()" class="btn-primary !bg-white/90 !text-[#4E342E] w-full">Enter</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app" class="app-container max-w-lg mx-auto shadow-2xl flex flex-col hidden">
+        <header id="page-header" class="flex-shrink-0 h-20 px-5 flex justify-between items-center"></header>
+        
+        <main id="main-content" class="flex-grow overflow-y-auto">
+            <div id="page-content"></div>
+        </main>
+        
+        <nav id="bottom-nav" class="flex-shrink-0 h-20 flex justify-around items-center border-t border-custom"></nav>
+    </div>
+
+    <div id="modal-container"></div>
+    <div id="toast-container" class="fixed bottom-24 right-4 z-[60] pointer-events-none"></div>
+    
+<script>
+// =================================================================================
+//  SECTION 1: SETUP & CONFIGURATION
+// =================================================================================
+
+const $ = (selector) => document.querySelector(selector);
+const $$ = (selector) => document.querySelectorAll(selector);
+
+function setAppHeight() {
+    document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+}
+window.addEventListener('resize', setAppHeight);
+setAppHeight();
+
+
+const SUPABASE_URL = 'https://nfkysagcoltwlpcdpwjl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ma3lzYWdjb2x0d2xwY2Rwd2psIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1NjgyMjIsImV4cCI6MjA3NjE0NDIyMn0.uVVR7wzcftUyTjGuGDGcpnBpZUZWDLUuwNYf-1c-VHw';
+const supabase = self.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const sound = {
+    audioContext: null,
+    audioElements: {},
+    init() {
+        if (this.audioContext) return;
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            this.audioElements['notification'] = new Audio('https://nfkysagcoltwlpcdpwjl.supabase.co/storage/v1/object/public/assets/notification-sound-effect-372475.mp3');
+            this.audioElements['notification'].preload = 'auto';
+        } catch(e) { console.error("Audio setup failed."); }
+    },
+    play(type) {
+        if (this.audioElements[type]) {
+            this.audioElements[type].currentTime = 0;
+            this.audioElements[type].play().catch(e => console.error(`Error playing ${type} sound:`, e));
+        } else if (this.audioContext) {
+            const o = this.audioContext.createOscillator(), g = this.audioContext.createGain(), t = this.audioContext.currentTime;
+            o.connect(g); g.connect(this.audioContext.destination); g.gain.setValueAtTime(0, t);
+            const sounds = {
+                click: { f: 800, g: 0.3, l: 0.1, type: 'sine' },
+                add: { f: 440, g: 0.15, l: 0.15, type: 'triangle' },
+                success: { f: 523, f2: 659, g: 0.2, l: 0.25, type: 'sine' },
+                win: { f: 587, f2: 880, g: 0.3, l: 0.3, type: 'sine' },
+                lose: { f: 220, f2: 180, g: 0.2, l: 0.2, type: 'sawtooth' },
+            };
+            const s = sounds[type]; if (!s) return;
+            o.type = s.type; o.frequency.setValueAtTime(s.f, t);
+            g.gain.linearRampToValueAtTime(s.g, t + 0.01);
+            if (s.f2) o.frequency.linearRampToValueAtTime(s.f2, t + s.l);
+            g.gain.exponentialRampToValueAtTime(0.00001, t + s.l);
+            o.start(t); o.stop(t + s.l);
+        }
+    }
+};
+
+// =================================================================================
+//  SECTION 2: CORE APPLICATION LOGIC
+// =================================================================================
+const app = {
+    state: {
+        currentPage: 'home', cart: [], activeOrder: null, tableNumber: null,
+        user: null, customerProfile: null, menuData: [], appSettings: {}, 
+        orderSubscription: null, currentMenuCategory: null, theme: 'tapri'
+    },
+    
+    async init() {
+        const savedTheme = localStorage.getItem('namo-chai-theme') || 'tapri';
+        this.state.theme = savedTheme;
+        this.applyTheme();
+
+        this.getTableNumberFromURL(); // Get table number early
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            this.state.user = session?.user;
+            if (!this.state.user) {
+                const { data, error } = await supabase.auth.signInAnonymously();
+                if (error) throw new Error(`Anonymous sign-in failed: ${error.message}`);
+                this.state.user = data.user;
+            }
+            // Fetch profile first
+            await this.fetchCustomerProfile();
+            
+            const splash = $('#splash-screen');
+            splash.classList.add('fade-out');
+            setTimeout(async () => {
+                splash.remove();
+                if(this.state.customerProfile && this.state.tableNumber) {
+                     this.enterApp(true);
+                } else {
+                    $('#intro-screen').classList.remove('hidden');
+                    $('#intro-screen').classList.add('fade-in');
+                }
+                // Fetch menu data in the background
+                this.fetchMenuData();
+                this.fetchAppSettings();
+            }, 500);
+
+        } catch (error) {
+            console.error("CRITICAL: Initialization failed.", error);
+            $('#splash-screen').innerHTML = `<div class="p-4 text-center"><p class="font-bold text-lg text-red-500">Connection Error</p><p class="text-secondary">Could not load the app. Please check your connection and refresh.</p></div>`;
+        }
+    },
+
+    beginExperience() {
+        sound.init(); // Init sound context AND preload audio file on first tap
+        sound.play('click');
+        const video = $('#intro-screen-video');
+        if (video) {
+            video.muted = false;
+            video.currentTime = 0;
+            video.play().catch(e => console.error("Video play failed:", e));
+        }
+
+        $('#intro-content-start').classList.add('hidden');
+        $('#intro-content-form').classList.remove('hidden');
+        
+        if (this.state.tableNumber) {
+            const tableInput = $('#intro-table-input');
+            tableInput.value = this.state.tableNumber;
+            tableInput.classList.add('hidden');
+        }
+    },
+
+    async submitIntroDetails() {
+        sound.play('click');
+        const name = $('#intro-name-input').value.trim();
+        const tableNumber = parseInt($('#intro-table-input').value);
+
+        if (!name || isNaN(tableNumber)) return ui.showToast("Please enter your name and table number.");
+
+        const { data, error } = await supabase.from('customers').upsert({ id: this.state.user.id, name }, { onConflict: 'id' }).select().single();
+       
+        if (error && error.code !== '23505') { // 23505 is unique violation, which upsert handles. Catch other errors.
+            return ui.showToast('Could not save profile. Try again.');
+        }
+        
+        this.state.customerProfile = data;
+        this.state.tableNumber = tableNumber;
+        this.enterApp(true);
+    },
+    
+    enterApp(skipIntro = false) {
+        if(skipIntro){
+             const intro = $('#intro-screen');
+             if(intro) intro.classList.add('fade-out');
+             setTimeout(() => {
+                if(intro) intro.remove();
+                $('#app').classList.remove('hidden');
+                $('#app').classList.add('flex', 'fade-in');
+                this.startSession();
+            }, 500);
+        }
+    },
+
+    getTableNumberFromURL() {
+        const tableNum = new URLSearchParams(window.location.search).get('table');
+        if (tableNum && !isNaN(parseInt(tableNum))) this.state.tableNumber = parseInt(tableNum);
+    },
+
+    async fetchCustomerProfile() { 
+        if (!this.state.user) return;
+        const { data, error } = await supabase.from('customers').select('*').eq('id', this.state.user.id).single();
+        if (error && error.code !== 'PGRST116') throw error;
+        if (data) this.state.customerProfile = data;
+    },
+
+    async fetchMenuData() {
+        const { data, error } = await supabase.from('products').select('*').order('id');
+        if (error) { console.error('Error fetching menu:', error); ui.showToast('Could not load menu.'); return; }
+        this.state.menuData = data.reduce((acc, item) => {
+            let cat = acc.find(c => c.category === item.category);
+            if (!cat) acc.push(cat = { category: item.category, items: [] });
+            cat.items.push(item);
+            return acc;
+        }, []);
+        // Re-render if the user is already on the order page when data arrives
+        if(this.state.currentPage === 'order') ui.renderPageContent();
+    },
+    
+    async fetchAppSettings() {
+        const { data, error } = await supabase.from('app_settings').select('key, value');
+        if (error) { console.error('Error fetching settings:', error); return; }
+        this.state.appSettings = data.reduce((acc, { key, value }) => ({ ...acc, [key]: value }), {});
+    },
+    
+    async startSession() {
+        if (!this.state.customerProfile || !this.state.tableNumber) {
+            const intro = $('#intro-screen');
+            if(intro) intro.remove(); 
+            $('#app').classList.add('hidden');
+            this.init(); 
+            return;
+        }
+        await this.fetchActiveOrder();
+        ui.render();
+        this.navigateTo('home');
+    },
+
+    navigateTo(page) {
+        if (!this.state.customerProfile) return;
+        sound.play('click');
+        this.state.currentPage = page;
+        ui.render();
+    },
+
+    addOrUpdateCart(itemId, quantity = 1) {
+        const cartItem = this.state.cart.find(i => i.id === itemId);
+        if (cartItem) {
+            cartItem.quantity += quantity;
+            if (cartItem.quantity <= 0) this.state.cart = this.state.cart.filter(i => i.id !== itemId);
+        } else if (quantity > 0) {
+            const item = this.state.menuData.flatMap(c => c.items).find(i => i.id === itemId);
+            if (item) this.state.cart.push({ cartId: Date.now(), ...item, quantity });
+        }
+        sound.play('add');
+        ui.render();
+    },
+    
+    applyTheme() {
+        document.body.dataset.theme = this.state.theme;
+    },
+
+    setTheme(themeName) {
+        this.state.theme = themeName;
+        localStorage.setItem('namo-chai-theme', themeName);
+        this.applyTheme();
+        ui.closeModal('theme-modal');
+    },
+
+    calculateCartTotal() { return this.state.cart.reduce((t, i) => t + (i.price * i.quantity), 0); },
+    
+    async placeOrder(btnElement) {
+        if (this.state.cart.length === 0) return;
+        btnElement.disabled = true;
+        btnElement.innerHTML = `<span class="flex items-center justify-center"><div class="spinner mr-2"></div> Placing Order...</span>`;
+        
+        try {
+            const { data: tableData, error: tableError } = await supabase.from('tables').select('id').eq('table_number', this.state.tableNumber).single();
+            if (tableError || !tableData) throw new Error(`Table #${this.state.tableNumber} not found.`);
+            
+            const { data: orderData, error: orderError } = await supabase.from('orders').insert({
+                customer_id: this.state.user.id, table_id: tableData.id,
+                total_amount: this.calculateCartTotal(), payment_method: 'Pay at Counter'
+            }).select().single();
+            if (orderError) throw orderError;
+            
+            const orderItems = this.state.cart.map(i => ({
+                order_id: orderData.id, product_id: i.id, quantity: i.quantity, price_at_time_of_order: i.price
+            }));
+            const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
+            if (itemsError) {
+                await supabase.from('orders').delete().eq('id', orderData.id); // Rollback
+                throw itemsError;
+            }
+            this.state.cart = [];
+            await this.fetchActiveOrder();
+            sound.play('success');
+            this.navigateTo('cart');
+        } catch (error) {
+            console.error("Order failed:", error);
+            ui.showToast(`Order failed: ${error.message}`);
+            btnElement.disabled = false;
+            btnElement.innerHTML = 'Place Order';
+        }
+    },
+    
+    async fetchActiveOrder() {
+        if (!this.state.user) return;
+        const { data, error } = await supabase.from('orders').select(`*, order_items(*, products(name))`).eq('customer_id', this.state.user.id).in('status', ['received', 'preparing']).order('created_at', { ascending: false }).limit(1).single();
+        if (error && error.code !== 'PGRST116') console.error('Fetch active order error:', error);
+        
+        this.state.activeOrder = data || null;
+        if (this.state.activeOrder) this.listenToOrderUpdates(this.state.activeOrder.id);
+    },
+    
+    listenToOrderUpdates(orderId) {
+        if (this.state.orderSubscription) supabase.removeChannel(this.state.orderSubscription);
+        this.state.orderSubscription = supabase.channel(`public:orders:id=eq.${orderId}`)
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` }, payload => {
+                const updatedOrder = payload.new;
+                if (updatedOrder.status !== this.state.activeOrder.status) {
+                    ui.showToast(`Your order is now: ${updatedOrder.status}`);
+                    sound.play('notification');
+                    this.state.activeOrder.status = updatedOrder.status;
+                }
+                if (['delivered', 'cancelled'].includes(updatedOrder.status)) {
+                    supabase.removeChannel(this.state.orderSubscription);
+                    this.state.orderSubscription = null;
+                    if (updatedOrder.status === 'delivered') {
+                        ui.showToast('Your order has been delivered!');
+                    } else {
+                        ui.showToast('Your order has been cancelled.');
+                    }
+                    this.state.activeOrder = null;
+                }
+                ui.render();
+            }).subscribe();
+    },
+
+    async sendStaffCall(requestType) {
+        if (!this.state.tableNumber) return ui.showToast('Table number not set.');
+        ui.showToast(`Calling for assistance...`);
+        
+        const { data: tableData } = await supabase.from('tables').select('id').eq('table_number', this.state.tableNumber).single();
+        if (!tableData) return ui.showToast('Invalid table number.');
+
+        const { error } = await supabase.from('staff_calls').insert({
+            table_id: tableData.id, customer_id: this.state.user.id, request_type: requestType
+        });
+
+        if (error) {
+            ui.showToast(`Error: ${error.message}`);
+        } else {
+            ui.showToast(`Staff has been notified!`);
+        }
+    }
+};
+
+// =================================================================================
+// SECTION 3: UI RENDERER
+// =================================================================================
+const ui = {
+    render() {
+        this.renderHeader();
+        this.renderBottomNav();
+        this.renderPageContent();
+        $('#main-content').scrollTop = 0;
+    },
+
+    showModal(id, content) {
+        $(`#${id}`)?.remove();
+        const modalHTML = `<div id="${id}" class="modal-overlay fixed inset-0 bg-black/60 flex items-end justify-center z-50 p-4 pt-20 fade-in"><div class="modal-content p-6 w-full max-w-lg slide-up">${content}</div></div>`;
+        $('#modal-container').insertAdjacentHTML('beforeend', modalHTML);
+        $(`#${id}`).addEventListener('click', (e) => { if (e.target.id === id) this.closeModal(id); });
+    },
+    closeModal(id) {
+        const modal = $(`#${id}`);
+        if (!modal) return;
+        modal.classList.add('fade-out');
+        setTimeout(() => modal.remove(), 300);
+    },
+    showToast(message) {
+        const toastId = `toast-${Date.now()}`;
+        const toastHTML = `<div id="${toastId}" class="brand-bg py-2 px-4 rounded-full shadow-lg text-sm font-semibold mb-2 slide-up">${message}</div>`;
+        $('#toast-container').insertAdjacentHTML('beforeend', toastHTML);
+        setTimeout(() => {
+            const toast = $(`#${toastId}`);
+            if (toast) {
+                toast.style.animation = 'fadeOut 0.5s ease forwards';
+                setTimeout(() => toast.remove(), 500);
+            }
+        }, 3000);
+    },
+    
+    renderHeader() {
+        const header = $('#page-header');
+        if (!app.state.customerProfile) { header.innerHTML = ''; return; }
+        header.innerHTML = `
+            <div>
+                <p class="text-sm text-secondary">Welcome back,</p>
+                <h1 class="font-heading text-xl font-bold text-primary -mt-1">${app.state.customerProfile.name}</h1>
+            </div>
+            <div class="text-right">
+                <p class="text-sm font-semibold text-primary">Table #${app.state.tableNumber || 'N/A'}</p>
+            </div>`;
+    },
+    
+    renderBottomNav() {
+        const ICONS = { home: `...`, order: `...`, cart: `...`, more: `...`};
+        ICONS.home = `<path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955a1.5 1.5 0 012.121 0l8.955 8.955M3 11.25V21h6V15h6v6h6V11.25M12 2.25l-.16.16L12 2.25z"/>`;
+        ICONS.order = `<path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/>`;
+        ICONS.cart = app.state.activeOrder ? `<path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />` : `<path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c.51 0 .962-.343 1.087-.835l1.821-6.831a1.5 1.5 0 00-1.087-1.835H4.868L4.49 3.375M7.5 14.25L5.106 5.106M17.25 20.25a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zM7.5 20.25a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />`;
+        ICONS.more = `<path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />`;
+        
+        const cartCount = app.state.cart.reduce((s, i) => s + i.quantity, 0);
+        $('#bottom-nav').innerHTML = Object.keys(ICONS).map(page => `
+            <button onclick="app.navigateTo('${page}')" class="nav-item relative flex-1 p-2 text-center ${app.state.currentPage === page ? 'active' : ''}">
+                <svg class="h-7 w-7 mx-auto text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">${ICONS[page]}</svg>
+                <span class="text-xs font-semibold capitalize text-secondary">${page === 'cart' && app.state.activeOrder ? 'Track' : page}</span>
+                ${page === 'cart' && cartCount > 0 && !app.state.activeOrder ? `<div class="absolute top-1 right-1/2 translate-x-4 w-5 h-5 brand-bg rounded-full text-xs font-bold flex items-center justify-center">${cartCount}</div>` : ''}
+            </button>`).join('');
+    },
+    
+    renderPageContent() {
+        const content = $('#page-content');
+        const renderers = {
+            home: this.renderHomePage, order: this.renderMenuPage,
+            cart: this.renderCartPage, more: this.renderMorePage,
+        };
+        content.innerHTML = `<div class="fade-in">${renderers[app.state.currentPage]?.call(this) || ''}</div>`;
+    },
+    
+    renderHomePage() {
+        const bestSellers = app.state.menuData.flatMap(c => c.items).filter(i => i.is_bestseller).slice(0, 5);
+        return `
+            <div class="p-5 text-center bg-secondary">
+                 <img src="https://dtrxqfujlcqxuouxbbnn.supabase.co/storage/v1/object/public/assets/2025-07-12.jpg" alt="Namo Tandoori Chai Logo" class="w-24 h-24 rounded-full object-cover shadow-lg mx-auto border-4 border-white/50">
+                 <h2 class="font-heading text-3xl font-bold mt-4 text-primary">Namo Tandoori Chai</h2>
+                 <p class="text-secondary">The Authentic Taste of India</p>
+            </div>
+            
+            <div class="px-5 mt-6">
+                <h3 class="font-heading text-2xl font-bold text-primary">Our Specials</h3>
+                <div class="horizontal-scroll flex gap-4 overflow-x-auto py-4 -mx-5 px-5">
+                    ${bestSellers.map(item => `
+                        <div onclick="ui.showItemDetailModal(${item.id})" class="flex-shrink-0 w-36 bg-secondary rounded-2xl p-3 text-center cursor-pointer transition-transform hover:scale-105">
+                            <div class="text-4xl h-14 flex items-center justify-center">${item.image_url || '☕'}</div>
+                            <h4 class="font-bold mt-1 text-sm truncate text-primary">${item.name}</h4>
+                            <p class="text-sm font-semibold text-secondary">₹${item.price}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <div class="px-5 mt-8 pb-5">
+                 <div class="bg-secondary rounded-2xl p-5 flex items-center justify-between">
+                    <div>
+                        <h3 class="font-heading text-xl font-bold text-primary">Need Assistance?</h3>
+                        <p class="text-sm text-secondary">Tap the bell to call staff.</p>
+                    </div>
+                    <button onclick="app.sendStaffCall('assistance')" class="btn-primary !p-3 !rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                    </button>
+                 </div>
+            </div>
+        `;
+    },
+    
+    renderMenuPage() {
+        if (!app.state.currentMenuCategory && app.state.menuData.length > 0) {
+            app.state.currentMenuCategory = app.state.menuData[0].category;
+        }
+        const currentItems = app.state.menuData.find(c => c.category === app.state.currentMenuCategory)?.items || [];
+        
+        return `
+            <div class="sticky top-0 bg-primary z-10 py-2">
+                <div class="horizontal-scroll flex gap-4 px-4 pb-2 overflow-x-auto border-b border-custom">
+                    ${app.state.menuData.map(c => `<button 
+                        class="category-tab whitespace-nowrap font-semibold py-2 text-primary ${app.state.currentMenuCategory === c.category ? 'brand-text border-b-2 border-brand-primary' : 'text-secondary'}" 
+                        onclick="app.state.currentMenuCategory = '${c.category}'; ui.render();">
+                        ${c.category}
+                    </button>`).join('')}
+                </div>
+            </div>
+            <div class="p-4 grid gap-3">
+                ${currentItems.length > 0 ? currentItems.filter(i => i.is_available).map(item => {
+                    const cartItem = app.state.cart.find(ci => ci.id === item.id);
+                    return `
+                        <div class="bg-secondary p-3 rounded-xl flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-3 min-w-0 flex-grow">
+                                <div class="text-3xl flex-shrink-0 w-14 h-14 flex items-center justify-center bg-primary rounded-lg">${item.image_url || '☕'}</div>
+                                <div class="min-w-0">
+                                    <h3 class="font-bold text-sm truncate text-primary">${item.name}</h3>
+                                    <p class="font-semibold text-xs text-secondary">₹${item.price}</p>
+                                </div>
+                            </div>
+                            <div class="flex-shrink-0">
+                                ${cartItem ? `
+                                    <div class="flex items-center gap-2 bg-primary rounded-full p-1">
+                                        <button onclick="app.addOrUpdateCart(${item.id}, -1)" class="w-7 h-7 rounded-full brand-bg text-lg font-bold flex items-center justify-center">-</button>
+                                        <span class="font-bold w-6 text-center text-primary">${cartItem.quantity}</span>
+                                        <button onclick="app.addOrUpdateCart(${item.id}, 1)" class="w-7 h-7 rounded-full brand-bg text-lg font-bold flex items-center justify-center">+</button>
+                                    </div>
+                                ` : `
+                                    <button onclick="app.addOrUpdateCart(${item.id}, 1)" class="w-9 h-9 rounded-full brand-bg text-2xl font-bold shadow-md flex items-center justify-center">+</button>
+                                `}
+                            </div>
+                        </div>`;
+                }).join('') : '<p class="text-center text-secondary p-8">Loading menu...</p>'}
+            </div>`;
+    },
+    
+    renderCartPage() {
+        if (app.state.activeOrder) return this.renderOrderTracking();
+        if (app.state.cart.length === 0) return `
+            <div class="text-center p-10 mt-10">
+                <span class="text-7xl">🛒</span>
+                <h2 class="font-heading text-2xl font-bold text-primary mt-4">Your cart is empty</h2>
+                <p class="text-secondary mt-2">Add items from the menu to get started.</p>
+                <button onclick="app.navigateTo('order')" class="mt-6 btn-primary">Browse Menu</button>
+            </div>`;
+        
+        const total = app.calculateCartTotal();
+        return `
+            <div class="flex flex-col h-full">
+                <div class="p-5 flex-shrink-0">
+                    <h2 class="font-heading text-3xl font-bold text-primary">My Cart</h2>
+                </div>
+                <div class="px-5 space-y-3 overflow-y-auto flex-grow">
+                    ${app.state.cart.map(i => `
+                    <div class="bg-secondary p-3 rounded-xl flex items-center gap-4">
+                        <div class="flex-grow">
+                            <p class="font-bold text-primary">${i.name}</p>
+                            <p class="text-sm text-secondary">₹${i.price} x ${i.quantity}</p>
+                        </div>
+                        <p class="font-bold text-lg text-primary">₹${(i.price * i.quantity).toFixed(2)}</p>
+                    </div>`).join('')}
+                </div>
+                <div class="p-5 mt-4 flex-shrink-0">
+                    <div class="bg-secondary rounded-xl p-4">
+                        <div class="flex justify-between items-center"><span class="text-xl font-bold text-primary">Total</span><span class="text-xl font-bold brand-text">₹${total.toFixed(2)}</span></div>
+                        <button onclick="app.placeOrder(this)" class="w-full mt-4 btn-primary">Place Order (Pay at Counter)</button>
+                    </div>
+                </div>
+            </div>`;
+    },
+
+    renderOrderTracking() {
+        const order = app.state.activeOrder;
+        const statuses = ['received', 'preparing', 'delivered'];
+        const currentIndex = statuses.indexOf(order.status);
+        
+        return `
+            <div class="p-5 text-center">
+                 <h2 class="font-heading text-3xl font-bold text-primary">Tracking Your Order</h2>
+                 <p class="text-secondary mb-8">Order ID: #${order.id.slice(0,6)}</p>
+                 <div class="flex justify-between items-center relative max-w-sm mx-auto my-12">
+                     <div class="absolute top-1/2 -translate-y-1/2 left-0 w-full h-1 bg-secondary"></div>
+                     <div class="absolute top-1/2 -translate-y-1/2 left-0 h-1 brand-bg transition-all duration-500" style="width: ${currentIndex / (statuses.length - 1) * 100}%"></div>
+                     ${statuses.map((s, i) => `
+                         <div class="relative">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${i <= currentIndex ? 'brand-bg' : 'bg-secondary border-2 border-custom'}">
+                                ${i <= currentIndex ? `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>` : ''}
+                            </div>
+                            <p class="absolute -bottom-7 left-1/2 -translate-x-1/2 text-xs font-semibold capitalize ${i <= currentIndex ? 'brand-text' : 'text-secondary'}">${s}</p>
+                         </div>
+                     `).join('')}
+                 </div>
+                 <div class="mt-20 bg-secondary p-5 rounded-2xl">
+                    <h3 class="font-bold text-xl text-primary">Order Summary</h3>
+                    <div class="text-left mt-3 space-y-1 text-sm text-primary">
+                        ${order.order_items.map(i => `<div class="flex justify-between"><span>${i.products.name} <span class="text-secondary">x${i.quantity}</span></span> <span>₹${(i.price_at_time_of_order * i.quantity).toFixed(2)}</span></div>`).join('')}
+                    </div>
+                 </div>
+            </div>
+        `;
+    },
+    
+    renderMorePage() {
+        return `
+            <div class="p-5 space-y-3">
+                <h2 class="font-heading text-3xl font-bold text-primary mb-2">More Options</h2>
+                <button onclick="ui.showThemeModal()" class="w-full text-left bg-secondary p-4 rounded-xl flex items-center gap-4 transition-transform hover:scale-105">
+                    <span class="text-3xl">🎨</span>
+                    <span class="font-semibold text-lg text-primary">Change Theme</span>
+                </button>
+                <button onclick="GAMES.showGameSelection()" class="w-full text-left bg-secondary p-4 rounded-xl flex items-center gap-4 transition-transform hover:scale-105">
+                    <span class="text-3xl">🎮</span>
+                    <span class="font-semibold text-lg text-primary">Play a Game</span>
+                </button>
+            </div>
+        `;
+    },
+    
+    showItemDetailModal(itemId) {
+        const item = app.state.menuData.flatMap(c => c.items).find(i => i.id === itemId); if (!item) return;
+        
+        ui.showModal('item-detail-modal', `
+            <div class="text-center">
+                <div class="text-5xl mb-4">${item.image_url || '☕'}</div>
+                <h2 class="font-heading text-3xl font-bold text-primary">${item.name}</h2>
+                <p class="text-xl font-semibold brand-text">₹${item.price}</p>
+                <p class="text-secondary mt-4">${item.description || 'A delicious choice.'}</p>
+            </div>
+            <div class="mt-6 grid grid-cols-2 gap-4">
+                <button onclick="ui.closeModal('item-detail-modal')" class="w-full btn-secondary !text-primary !bg-secondary">Back</button>
+                <button onclick="app.addOrUpdateCart(${item.id}, 1); ui.closeModal('item-detail-modal');" class="w-full btn-primary">Add to Cart</button>
+            </div>
+        `);
+    },
+    
+    showThemeModal() {
+        const themes = [
+            { id: 'tapri', name: 'Tapri', icon: '🔥' },
+            { id: 'midnight', name: 'Midnight Masala', icon: '🌙' },
+            { id: 'minty', name: 'Minty Morning', icon: '🌿' },
+        ];
+        ui.showModal('theme-modal', `
+            <h2 class="font-heading text-2xl font-bold text-primary mb-4">Choose a Theme</h2>
+            <div class="grid grid-cols-1 gap-3">${themes.map(t => `
+                <button onclick="app.setTheme('${t.id}')" class="w-full text-left bg-secondary p-4 rounded-xl flex items-center gap-4">
+                    <span class="text-3xl">${t.icon}</span>
+                    <span class="font-semibold text-lg text-primary">${t.name}</span>
+                </button>
+            `).join('')}</div>
+        `);
+    }
+};
+
+// =================================================================================
+//  SECTION 4: GAMES
+// =================================================================================
+const GAMES = {
+    list: [
+        { id: 'tandoorTap', title: 'Tandoor Tap', desc: 'Tap the hot kulhads!', icon: '🔥' },
+        { id: 'guessTheSpice', title: 'Guess the Spice', desc: 'A quick memory game.', icon: '🌶️' },
+        { id: 'chaiCross', title: 'Chai-Cross', desc: 'A classic game of Tic-Tac-Toe.', icon: '⚔️' },
+    ],
+
+    showGameSelection() {
+        ui.showModal('game-selection-modal', `
+            <h2 class="font-heading text-2xl font-bold text-primary mb-4">Chai Time Games</h2>
+            <div class="space-y-3">${this.list.map(game => `
+                <button onclick="GAMES['${game.id}'].start()" class="w-full text-left bg-secondary p-4 rounded-xl flex items-center gap-4">
+                    <span class="text-3xl">${game.icon}</span>
+                    <div>
+                        <p class="font-semibold text-lg text-primary">${game.title}</p>
+                        <p class="text-sm text-secondary">${game.desc}</p>
+                    </div>
+                </button>
+            `).join('')}</div>
+            <button onclick="ui.closeModal('game-selection-modal')" class="w-full mt-6 btn-secondary !text-primary !bg-secondary">Close</button>
+        `);
+    },
+
+    chaiCross: {
+        board: [], currentPlayer: '', winner: null,
+        start() {
+            this.board = Array(9).fill(null); this.currentPlayer = '☕'; this.winner = null;
+            ui.showModal('chai-cross-modal', `
+                <div class="text-center">
+                    <h2 class="font-heading text-2xl font-bold text-primary">Chai-Cross</h2>
+                    <p id="chai-cross-status" class="text-secondary font-semibold my-2">☕'s turn</p>
+                    <div id="chai-cross-board" class="grid grid-cols-3 gap-2 my-4 max-w-xs mx-auto">
+                        ${Array(9).fill(0).map((_, i) => `<div class="aspect-square bg-secondary rounded-lg flex items-center justify-center text-5xl font-bold cursor-pointer" onclick="GAMES.chaiCross.play(${i})"></div>`).join('')}
+                    </div>
+                    <div class="flex gap-4">
+                        <button onclick="ui.closeModal('chai-cross-modal')" class="w-full btn-secondary !text-primary !bg-secondary">Close</button>
+                        <button onclick="GAMES.chaiCross.start()" class="w-full btn-primary">New Game</button>
+                    </div>
+                </div>
+            `);
+        },
+        play(i) {
+            if (this.board[i] || this.winner) return;
+            this.board[i] = this.currentPlayer;
+            this.currentPlayer = this.currentPlayer === '☕' ? '🌶️' : '☕';
+            this.checkWinner(); this.updateUI();
+        },
+        updateUI() {
+            $$('#chai-cross-board > div').forEach((cell, i) => cell.textContent = this.board[i]);
+            const status = $('#chai-cross-status');
+            if(status) {
+                if(this.winner) status.textContent = this.winner === 'Draw' ? "It's a draw!" : `${this.winner} wins!`;
+                else status.textContent = `${this.currentPlayer}'s turn`;
+            }
+        },
+        checkWinner() {
+            const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+            for (const line of lines) {
+                const [a, b, c] = line;
+                if (this.board[a] && this.board[a] === this.board[b] && this.board[a] === this.board[c]) {
+                    this.winner = this.board[a]; sound.play('win'); return;
+                }
+            }
+            if (this.board.every(cell => cell)) { this.winner = 'Draw'; sound.play('lose'); }
+        }
+    },
+    
+    tandoorTap: {
+        score: 0, timer: null, gameInterval: null,
+        start() {
+            this.score = 0;
+            ui.showModal('tandoor-tap-modal', `
+                <div class="text-center">
+                    <h2 class="font-heading text-2xl font-bold text-primary">Tandoor Tap</h2>
+                    <div class="flex justify-between items-center my-4 font-bold">
+                        <p class="text-lg text-primary">Score: <span id="tandoor-tap-score">0</span></p>
+                        <p class="text-lg text-primary">Time: <span id="tandoor-tap-time">15</span>s</p>
+                    </div>
+                    <div id="tandoor-tap-grid" class="grid grid-cols-3 gap-3 my-4 max-w-xs mx-auto">
+                        ${Array(9).fill(0).map((_, i) => `<div class="aspect-square bg-secondary rounded-full flex items-center justify-center text-4xl cursor-pointer transition-all duration-200"></div>`).join('')}
+                    </div>
+                    <button onclick="GAMES.tandoorTap.endGame()" class="btn-secondary !text-primary !bg-secondary">Close</button>
+                </div>
+            `);
+            this.runGame();
+        },
+        runGame() {
+            let timeLeft = 15;
+            const timeEl = $('#tandoor-tap-time');
+            if (timeEl) timeEl.textContent = timeLeft;
+
+            this.timer = setInterval(() => {
+                timeLeft--;
+                if (timeEl) timeEl.textContent = timeLeft;
+                if (timeLeft < 0) this.endGame(true);
+            }, 1000);
+
+            const gridItems = $$('#tandoor-tap-grid > div');
+            gridItems.forEach(item => item.addEventListener('click', () => this.tap(item)));
+
+            this.gameInterval = setInterval(() => {
+                if(!$('#tandoor-tap-grid')) { this.endGame(); return; }
+                gridItems.forEach(item => { item.textContent = ''; item.classList.remove('!bg-red-400') });
+                const randomIndex = Math.floor(Math.random() * 9);
+                gridItems[randomIndex].textContent = '🔥';
+                gridItems[randomIndex].classList.add('!bg-red-400');
+            }, 800);
+        },
+        tap(item) {
+            if (item.textContent === '🔥') {
+                sound.play('add'); this.score++;
+                const scoreEl = $('#tandoor-tap-score');
+                if (scoreEl) scoreEl.textContent = this.score;
+                item.textContent = ''; item.classList.remove('!bg-red-400');
+            }
+        },
+        endGame(gameOver = false) {
+            clearInterval(this.timer);
+            clearInterval(this.gameInterval);
+            this.timer = null; this.gameInterval = null;
+            if(gameOver) {
+                const grid = $('#tandoor-tap-grid');
+                if(grid) grid.innerHTML = `<div class="col-span-3 text-center py-10"><p class="font-bold text-xl">Game Over!</p><p class="text-secondary">Your final score is ${this.score}</p></div>`;
+            } else {
+                ui.closeModal('tandoor-tap-modal');
+            }
+        }
+    },
+
+    guessTheSpice: {
+        cards: [], flippedCards: [], matchedPairs: 0,
+        start() {
+            const spices = ['🌶️', '🌿', '⚫', '🍂', '🌼', '🌶️', '🌿', '⚫', '🍂', '🌼'];
+            this.cards = spices.sort(() => 0.5 - Math.random());
+            this.flippedCards = []; this.matchedPairs = 0;
+            ui.showModal('guess-spice-modal', `
+                 <div class="text-center">
+                    <h2 class="font-heading text-2xl font-bold text-primary">Guess the Spice</h2>
+                    <p class="text-secondary my-2">Find all the matching pairs!</p>
+                    <div id="guess-spice-grid" class="grid grid-cols-4 gap-2 my-4 max-w-xs mx-auto">
+                        ${this.cards.map((spice, i) => `<div class="aspect-square bg-secondary rounded-lg flex items-center justify-center text-3xl cursor-pointer" data-index="${i}" data-spice="${spice}"></div>`).join('')}
+                    </div>
+                    <div class="flex gap-4">
+                        <button onclick="ui.closeModal('guess-spice-modal')" class="w-full btn-secondary !text-primary !bg-secondary">Close</button>
+                        <button onclick="GAMES.guessTheSpice.start()" class="w-full btn-primary">Restart</button>
+                    </div>
+                </div>
+            `);
+            $$('#guess-spice-grid > div').forEach(card => card.addEventListener('click', () => this.flip(card)));
+        },
+        flip(card) {
+            if (this.flippedCards.length >= 2 || card.classList.contains('flipped')) return;
+            card.textContent = card.dataset.spice;
+            card.classList.add('flipped', '!bg-brand-secondary');
+            this.flippedCards.push(card);
+            if(this.flippedCards.length === 2) this.checkMatch();
+        },
+        checkMatch() {
+            const [c1, c2] = this.flippedCards;
+            if (c1.dataset.spice === c2.dataset.spice) {
+                sound.play('success');
+                this.matchedPairs++;
+                this.flippedCards = [];
+                if (this.matchedPairs === this.cards.length / 2) {
+                    sound.play('win');
+                    setTimeout(() => ui.showToast("You found them all!"), 500);
+                }
+            } else {
+                setTimeout(() => {
+                    c1.textContent = ''; c2.textContent = '';
+                    c1.classList.remove('flipped', '!bg-brand-secondary');
+                    c2.classList.remove('flipped', '!bg-brand-secondary');
+                    this.flippedCards = [];
+                }, 1000);
+            }
+        }
+    }
+};
+
+// =================================================================================
+//  APP INITIALIZATION
+// =================================================================================
+document.addEventListener('DOMContentLoaded', () => app.init());
+
+</script>
+</body>
+</html>
+
