@@ -54,13 +54,13 @@
         }
         .app-container { 
             height: var(--app-height); 
-            overflow-x: hidden; 
+            overflow: hidden; 
             width: 100%;
             background-image: url('https://www.transparenttextures.com/patterns/wood-pattern.png');
         }
         .text-primary, .text-secondary, .font-heading, .nav-item span, .btn-secondary { transition: color 0.4s ease; }
         
-        main { overflow-y: auto; -webkit-overflow-scrolling: touch; overflow-x: hidden; }
+        main { overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
         .brand-text { color: var(--brand-primary); }
         .brand-bg { background-color: var(--brand-primary); color: #3E2723; }
@@ -73,7 +73,7 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; forwards; } }
         @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes spin { to { transform: rotate(3deg); } }
 
         .fade-in { animation: fadeIn 0.5s ease-out; }
         .slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -139,11 +139,11 @@
     <div id="app" class="app-container max-w-lg mx-auto shadow-2xl flex flex-col hidden">
         <header id="page-header" class="flex-shrink-0 h-20 px-5 flex justify-between items-center"></header>
         
-        <main id="main-content" class="flex-grow overflow-y-auto">
-            <div id="page-content"></div>
+        <main id="main-content" class="flex-grow overflow-y-auto min-h-0">
+            <div id="page-content" class="h-full"></div>
         </main>
         
-        <nav id="bottom-nav" class="flex-shrink-0 h-20 flex justify-around items-center border-t border-custom"></nav>
+        <nav id="bottom-nav" class="flex-shrink-0 h-20 flex justify-around items-center border-t border-custom bg-primary"></nav>
     </div>
 
     <div id="modal-container"></div>
@@ -163,9 +163,9 @@ function setAppHeight() {
 window.addEventListener('resize', setAppHeight);
 setAppHeight();
 
-
-const SUPABASE_URL = 'https://nfkysagcoltwlpcdpwjl.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ma3lzYWdjb2x0d2xwY2Rwd2psIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1NjgyMjIsImV4cCI6MjA3NjE0NDIyMn0.uVVR7wzcftUyTjGuGDGcpnBpZUZWDLUuwNYf-1c-VHw';
+// Dynamic Supabase connection with fallback
+const SUPABASE_URL = typeof __SUPABASE_URL__ !== 'undefined' ? __SUPABASE_URL__ : 'https://nfkysagcoltwlpcdpwjl.supabase.co';
+const SUPABASE_ANON_KEY = typeof __SUPABASE_ANON_KEY__ !== 'undefined' ? __SUPABASE_ANON_KEY__ : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ma3lzYWdjb2x0d2xwY2Rwd2psIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1NjgyMjIsImV4cCI6MjA3NjE0NDIyMn0.uVVR7wzcftUyTjGuGDGcpnBpZUZWDLUuwNYf-1c-VHw';
 const supabase = self.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const sound = {
@@ -388,14 +388,19 @@ const app = {
             const { data: tableData, error: tableError } = await supabase.from('tables').select('id').eq('table_number', this.state.tableNumber).single();
             if (tableError || !tableData) throw new Error(`Table #${this.state.tableNumber} not found.`);
             
-            const { data: orderData, error: orderError } = await supabase.from('orders').insert([{
-                customer_id: this.state.user.id, table_id: tableData.id,
-                total_amount: this.calculateCartTotal(), payment_method: 'Pay at Counter'
-            }]).select().single();
+            const { data: orderData, error: orderError } = await supabase.from('orders').insert({
+                customer_id: this.state.user.id,
+                table_id: tableData.id,
+                total_amount: this.calculateCartTotal(),
+                payment_method: 'Pay at Counter'
+            }).select().single();
             if (orderError) throw orderError;
             
             const orderItems = this.state.cart.map(i => ({
-                order_id: orderData.id, product_id: i.id, quantity: i.quantity, price_at_time_of_order: i.price
+                order_id: orderData.id,
+                product_id: i.id,
+                quantity: i.quantity,
+                price_at_time_of_order: i.price
             }));
             const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
             if (itemsError) {
@@ -537,7 +542,7 @@ const ui = {
             home: this.renderHomePage, order: this.renderMenuPage,
             cart: this.renderCartPage, more: this.renderMorePage,
         };
-        content.innerHTML = `<div class="fade-in">${renderers[app.state.currentPage]?.call(this) || ''}</div>`;
+        content.innerHTML = `<div class="fade-in h-full">${renderers[app.state.currentPage]?.call(this) || ''}</div>`;
     },
     
     renderHomePage() {
@@ -598,7 +603,7 @@ const ui = {
                 ${currentItems.length > 0 ? currentItems.filter(i => i.is_available).map(item => {
                     const cartItem = app.state.cart.find(ci => ci.id === item.id);
                     return `
-                        <div class="bg-secondary p-3 rounded-xl flex items-center gap-3">
+                        <div class="bg-secondary p-3 rounded-xl flex items-center justify-between gap-3">
                             <div class="flex-shrink-0">
                                 ${cartItem ? `
                                     <div class="flex items-center gap-2 bg-primary rounded-full p-1">
@@ -610,10 +615,12 @@ const ui = {
                                     <button onclick="app.addOrUpdateCart(${item.id}, 1)" class="w-9 h-9 rounded-full brand-bg text-2xl font-bold shadow-md flex items-center justify-center">+</button>
                                 `}
                             </div>
-                            <div class="text-3xl flex-shrink-0 w-14 h-14 flex items-center justify-center bg-primary rounded-lg">${item.image_url || '☕'}</div>
-                            <div class="flex-1 min-w-0">
-                                <h3 class="font-bold text-sm truncate text-primary">${item.name}</h3>
-                                <p class="font-semibold text-xs text-secondary">₹${item.price}</p>
+                             <div class="flex items-center gap-3 min-w-0 flex-grow">
+                                <div class="text-3xl flex-shrink-0 w-14 h-14 flex items-center justify-center bg-primary rounded-lg">${item.image_url || '☕'}</div>
+                                <div class="min-w-0">
+                                    <h3 class="font-bold text-sm truncate text-primary">${item.name}</h3>
+                                    <p class="font-semibold text-xs text-secondary">₹${item.price}</p>
+                                </div>
                             </div>
                         </div>`;
                 }).join('') : '<p class="text-center text-secondary p-8">Loading menu...</p>'}
